@@ -1,4 +1,5 @@
 import pandas as pd
+import math
 
 def getActivityAttribute(activityData, attributeName):
     attributeValue = ""
@@ -6,9 +7,14 @@ def getActivityAttribute(activityData, attributeName):
         attributeValue = activityData[attributeName]
     return attributeValue
 
+def gradeIsEmpty(grade):
+    return type(grade) == float and math.isnan(grade)
+
 def explodeStudent(studentEntry):
     activityEntries = []
     studentEntryAttrs = studentEntry.to_dict()
+    if studentEntryAttrs['qualifier'] == 'guest' or gradeIsEmpty(studentEntryAttrs['grade']):
+        return {}
     if 'finished_activities' in studentEntryAttrs and pd.notna(studentEntryAttrs['finished_activities']):
         finishedActivities = studentEntryAttrs.pop('finished_activities')
         for subjectID in finishedActivities:

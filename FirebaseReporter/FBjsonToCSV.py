@@ -40,7 +40,13 @@ def activityLogJSONstr_to_CSV(jsonString, CSVDir):
     df_to_CSV(pd.DataFrame(latestActivities), "", CSVDir, 'activity_log.csv')
 
 def getClassStudentsDF(classAssets, classroomID):
+    testClassroomIDs = ['S0001']
+    if classroomID in testClassroomIDs:
+        return pd.DataFrame()
+
+    privacy_fields = ['birth_date','first_name','surname']
     studentsDF = pd.DataFrame(classAssets[classroomID]['students']).transpose()
+    studentsDF = studentsDF.drop(privacy_fields, axis=1)
     nStudents = len(studentsDF)
     studentsDF['classroom_id'] = [classroomID for i in range(nStudents)]
     return studentsDF
@@ -86,10 +92,11 @@ def classAssetsJSONstr_to_CSV(jsonString, CSVDir):
     json_to_CSV(explodedAcaDF.transpose(), "", CSVDir, 'academics.csv')
 
     chapterStatusMap = ChapterStatusMapper.mapChapterStatus(explodedAcaDF, CSVDir)
-    json_to_CSV(chapterStatusMap.transpose(), "", CSVDir, 'chapstat.csv')
+    json_to_CSV(chapterStatusMap.transpose(), "", CSVDir, 'chapstat_prelim.csv')
 
+    json_to_CSV(attendanceDF.transpose(), "", CSVDir, 'student_attendance.csv')
     attendancePivot = makeAttendancePivot(attendanceDF).transpose()
-    json_to_CSV(attendancePivot, "", CSVDir, 'attendance.csv')
+    json_to_CSV(attendancePivot, "classroom_id", CSVDir, 'attendance_pivot.csv')
 
 
 def classroomsJSONstr_to_CSV(jsonString, CSVDir):
@@ -112,7 +119,6 @@ def jsonFile_to_CSV(jsonDir, jsonFilename, CSVDir):
     firebaseFileProcessor = functionForFile(jsonFilename)
     if firebaseFileProcessor is not None:
         jsonFile = io.open(os.path.join(jsonDir, jsonFilename), mode='r', encoding='utf-8')
-        csvFilename = jsonFilename + '.csv'
         firebaseFileProcessor(jsonFile.read(), CSVDir)
         jsonFile.close()
 
