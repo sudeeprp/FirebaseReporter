@@ -3,6 +3,7 @@ import json
 import os
 import io
 import numpy as np
+import dbInterpreter
 
 def getChapterStatusRules(rulesDir):
     STATUS_RULES_FILE = "status_rules.json"
@@ -59,7 +60,7 @@ def mapChapterStatus(acaDF, rulesDir):
     STATUS_RULE_KEY = "status_rules"
     statusOfChapters = pd.DataFrame()
     subjectsStatusRules = getChapterStatusRules(rulesDir)
-    acaDF['grade_subject'] = acaDF['grade'] + '_' + acaDF['subject_id'].str.lower()
+    dbInterpreter.joinGradeAndSubject(acaDF, subject_key='subject_id')
     emptyChapterEntries = []
     for grade_subject in subjectsStatusRules:
         for chapterStatusRule in subjectsStatusRules[grade_subject]:
