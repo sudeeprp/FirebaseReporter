@@ -7,4 +7,4 @@ def splitGradeAndSubject(dfWithGradeSub, grade_key='grade', subject_key='subject
     return dfWithGradeSub
 
 def joinGradeAndSubject(df, grade_key='grade', subject_key='subject'):
-    df['grade_subject'] = df[grade_key] + '_' + df[subject_key].str.lower()
+    df['grade_subject'] = str(df[grade_key]) + '_' + df[subject_key].str.lower()

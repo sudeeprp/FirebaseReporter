@@ -113,7 +113,7 @@ def appendEmptyChapterEntries(CSVDir, chapCompleteCSV, emptyChapterEntries, chap
     return
 
 def classAssetsJSONstr_to_CSV(jsonString, CSVDir):
-    testClassroomIDs = ['S0001']
+    testClassroomIDs = ['S0001', 'S0002']
     classAssets = json.loads(jsonString)
     classesDF = pd.DataFrame()
     attendanceDF = pd.DataFrame()
