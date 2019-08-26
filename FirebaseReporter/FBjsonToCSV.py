@@ -71,8 +71,20 @@ def getClassAttendanceDF(classAssets, classroomID):
 def makeAttendancePivot(attendanceDF):
     return pd.pivot_table(attendanceDF, values='presence', index=['classroom_id'], columns=['date'], aggfunc=np.sum)
 
-def getClassChaptersDF(classAssets, classroomID):
+def getChapterName(activitiesDF, grade_subject, chapter_id):
+    gradeSubSplit = grade_subject.split('_')
+    grade = gradeSubSplit[0]
+    subject = gradeSubSplit[1]
+    chapterName = "chapter-name not found"
+    for index, activityRow in activitiesDF.iterrows():
+        if str(activityRow['grade']) == grade and activityRow['subject'] == subject and activityRow['chapter_id'] == chapter_id:
+            chapterName = activityRow['chapter_name']
+            break
+    return chapterName
+
+def getClassChaptersDF(CSVDir, classAssets, classroomID):
     classChaptersDF = pd.DataFrame()
+    activitiesDF = pd.read_csv(os.path.join(CSVDir, 'activities_list.csv'), encoding='utf-8')
     if 'class_subject_current' in classAssets[classroomID]:
         classChapters = []
         currentChapters = classAssets[classroomID]['class_subject_current']
@@ -80,7 +92,8 @@ def getClassChaptersDF(classAssets, classroomID):
             classChapters.append({
                 "classroom_id": classroomID,
                 "grade_subject": grade_subject,
-                "current_chapter": currentChapters[grade_subject]})
+                "current_chapter": currentChapters[grade_subject],
+                "current_chapter_name": getChapterName(activitiesDF, grade_subject, currentChapters[grade_subject])})
         classChaptersDF = dbInterpreter.splitGradeAndSubject(pd.DataFrame(classChapters))
     return classChaptersDF
 
@@ -91,11 +104,16 @@ def repairChapstat(CSVDir, inputCSV, outputCSV):
     with io.open(os.path.join(CSVDir, outputCSV), mode='w', encoding='utf-8') as csvFileProcessed:
         csvFileProcessed.writelines(csvLines)
 
-def fillEmptyChapterEntries(chapterStatusMap, emptyChapterEntries):
+def appendEmptyChapterEntries(CSVDir, chapCompleteCSV, emptyChapterEntries, chapstatCSV):
+    chapstatDF = pd.read_csv(os.path.join(CSVDir, chapCompleteCSV), encoding='utf-8')
+    chapstatDF = chapstatDF.append(dbInterpreter.splitGradeAndSubject
+                                        (pd.DataFrame(emptyChapterEntries), subject_key='subject_id'),
+                                   ignore_index=True)
+    df_to_CSV(chapstatDF, "", CSVDir, chapstatCSV)
     return
 
 def classAssetsJSONstr_to_CSV(jsonString, CSVDir):
-    testClassroomIDs = ['S0001']
+    testClassroomIDs = ['S0001', 'S0002']
     classAssets = json.loads(jsonString)
     classesDF = pd.DataFrame()
     attendanceDF = pd.DataFrame()
@@ -103,22 +121,21 @@ def classAssetsJSONstr_to_CSV(jsonString, CSVDir):
     classChaptersDF = pd.DataFrame()
 
     for classroomID in classAssets:
-        if classroomID not in testClassroomIDs:
+        if classroomID not in testClassroomIDs and 'students' in classAssets[classroomID]:
             studentsDF = getClassStudentsDF(classAssets, classroomID)
             classStudentCounts.append({"classroom_id": classroomID, "student_count": len(studentsDF)})
             classesDF = classesDF.append(studentsDF)
             attendanceDF = attendanceDF.append(getClassAttendanceDF(classAssets, classroomID))
-            classChaptersDF = classChaptersDF.append(getClassChaptersDF(classAssets, classroomID))
-
+            classChaptersDF = classChaptersDF.append(getClassChaptersDF(CSVDir, classAssets, classroomID))
     json_to_CSV(pd.DataFrame(classStudentCounts).transpose(), "", CSVDir, 'student_count.csv')
 
     explodedAcaDF = AcademicRecordCumulator.explodeActivities(classesDF)
     json_to_CSV(explodedAcaDF.transpose(), "", CSVDir, 'academics.csv')
 
     chapterStatusMap, emptyChapterEntries = ChapterStatusMapper.mapChapterStatus(explodedAcaDF, CSVDir)
-    fillEmptyChapterEntries(chapterStatusMap, emptyChapterEntries)
     json_to_CSV(chapterStatusMap.transpose(), "", CSVDir, 'chapstat_prelim.csv')
-    repairChapstat(CSVDir, 'chapstat_prelim.csv', 'chapstat.csv')
+    repairChapstat(CSVDir, 'chapstat_prelim.csv', 'chapcompletes.csv')
+    appendEmptyChapterEntries(CSVDir, 'chapcompletes.csv', emptyChapterEntries, 'chapstat.csv')
 
     json_to_CSV(attendanceDF.transpose(), "", CSVDir, 'student_attendance.csv')
     attendancePivot = makeAttendancePivot(attendanceDF).transpose()

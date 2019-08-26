@@ -55,7 +55,7 @@ def deriveRules(curriculumDir, outputDir):
             subjectJsonFile = io.open(subjectDescrFile, mode='r', encoding='utf-8')
             subjectDescriptorJsonstr = subjectJsonFile.read()
             subjectJsonFile.close()
-            chapterRules, subjectActivities = deriveChapterRulesAndActivities(subdir, subjectDescriptorJsonstr)
+            chapterRules, subjectActivities = deriveChapterRulesAndActivities(subdir.lower(), subjectDescriptorJsonstr)
             activities.extend(subjectActivities)
             chapterStatusRules.update(chapterRules)
     chapterStatusRulesJsonstr = json.dumps(chapterStatusRules, indent=2)
@@ -65,18 +65,24 @@ def deriveRules(curriculumDir, outputDir):
     writeChapterActivities(pd.DataFrame(activities), outputDir)
 
 def writeGradeNames(curriculumDir, outputDir):
-    gradeNamesFile = io.open(os.path.join(curriculumDir, 'display names of grades.json'), mode='r', encoding='utf-8')
-    gradeNamesJson = gradeNamesFile.read()
-    gradeNamesFile.close()
-    gradeNames = json.loads(gradeNamesJson)
-    gradeMap = []
-    for grade in gradeNames:
-        gradeMap.append({"grade": grade, "display": gradeNames[grade]})
-    gradeMapDF = pd.DataFrame(gradeMap)
-    gradeMapDF.to_csv(os.path.join(outputDir, 'grade_map.csv'))
+    with io.open(os.path.join(curriculumDir, 'display names of grades.json'), mode='r', encoding='utf-8') as gradeNamesFile:
+        gradeNames = json.loads(gradeNamesFile.read())
+        gradeMap = []
+        for grade in gradeNames:
+            gradeMap.append({"grade": grade, "display": gradeNames[grade]})
+        pd.DataFrame(gradeMap).to_csv(os.path.join(outputDir, 'grade_map.csv'), encoding='utf-8')
+
+def writeSubjectNames(curriculumDir, outputDir):
+    with io.open(os.path.join(curriculumDir, 'display names of subjects.json'), mode='r', encoding='utf-8') as subNamesFile:
+        subjectNames = json.loads(subNamesFile.read())
+        subjectMap = []
+        for subject in subjectNames:
+            subjectMap.append({"subject_id": subject.lower(), "subject_name": subjectNames[subject]})
+        pd.DataFrame(subjectMap).to_csv(os.path.join(outputDir, 'subject_map.csv'), encoding='utf-8')
 
 if len(sys.argv) == 3:
     deriveRules(curriculumDir=sys.argv[1], outputDir=sys.argv[2])
     writeGradeNames(curriculumDir=sys.argv[1], outputDir=sys.argv[2])
+    writeSubjectNames(curriculumDir=sys.argv[1], outputDir=sys.argv[2])
 else:
     print("Usage:\n" + sys.argv[0] + " <LearningGrid curriculum dir> <output dir>")

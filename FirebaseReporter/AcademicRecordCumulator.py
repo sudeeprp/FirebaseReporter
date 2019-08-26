@@ -19,7 +19,7 @@ def explodeStudent(studentEntry):
         finishedActivities = studentEntryAttrs.pop('finished_activities')
         for subjectID in finishedActivities:
             activityEntry = studentEntryAttrs
-            activityEntry['subject_id'] = subjectID
+            activityEntry['subject_id'] = subjectID.lower()
             for chapterID in finishedActivities[subjectID]:
                 activityEntry['chapter_id'] = chapterID
                 for activityID in finishedActivities[subjectID][chapterID]:
