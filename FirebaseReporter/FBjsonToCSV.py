@@ -138,8 +138,12 @@ def classAssetsJSONstr_to_CSV(jsonString, CSVDir):
     appendEmptyChapterEntries(CSVDir, 'chapcompletes.csv', emptyChapterEntries, 'chapstat.csv')
 
     json_to_CSV(attendanceDF.transpose(), "", CSVDir, 'student_attendance.csv')
+    '''This code brings dates as columns'''
+    '''
     attendancePivot = makeAttendancePivot(attendanceDF).transpose()
     json_to_CSV(attendancePivot, "classroom_id", CSVDir, 'attendance_pivot.csv')
+    '''
+    json_to_CSV(attendanceDF.transpose(), "", CSVDir, 'attendance.csv')
 
     json_to_CSV(classChaptersDF.transpose(), "", CSVDir, 'class_chapters.csv')
 
